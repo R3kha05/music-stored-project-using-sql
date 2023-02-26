@@ -81,29 +81,28 @@ order by milliseconds desc
 --with the highest amount of purchases. Write a query that returns each country along with the top Genre. For countries where 
 --the maximum number of purchases is shared return all Genres. */
 
-with popular_music as (
-	select i.billing_country, count(l.quantity)as purchase,g.name,g.genre_id,
+select * from (
+select i.billing_country, count(l.quantity)as purchase,g.name,g.genre_id,
 	ROW_NUMBER() over(partition by i.billing_country order by count(l.quantity) desc ) as row
 	from invoice as i
 	join invoice_line as l on i.invoice_id=l.invoice_id
 	join track as t on t.track_id=l.track_id
 	join genre as g on t.genre_id=g.genre_id
-	group by i.billing_country, g.name,g.genre_id
-)
-
-select * from popular_music where  row <=1
+	group by i.billing_country, g.name,g.genre_id) as tables
+	where row <=1
 
 /*Q10. Write a query that determines the customer that has spent the most on music for each country. 
 Write a query that returns the country along with the top customer and how much they spent. 
 For countries where the top amount spent is shared, provide all customers who spent this amount. */
 
 
-WITH country_wise as (
+select * from(
+
 	select c.customer_id,c.first_name,c.last_name,i.billing_country, sum(i.total)as total_spend,
-	ROW_NUMBER() over(partition by i.billing_country order by sum(i.total) desc) as rowno  ---
+	dense_rank() over(partition by i.billing_country order by sum(i.total) desc) as denserank  ---
 	from  invoice as i 
 	join   customer as c on c.customer_id=i.customer_id
-	group by c.customer_id,c.first_name,c.last_name,i.billing_country)
-	
-select* from country_wise where rowno<=1 --highest time spend by that contry
+	group by c.customer_id,c.first_name,c.last_name,i.billing_country) as tables
+	where  denserank = 1
+
 
